@@ -6,7 +6,7 @@ var fontAlias = map[string]string{
 	// SAUCE v00.5 compatible names
 	"Amiga MicroKnight":  "microknight",
 	"Amiga MicroKnight+": "microknightplus",
-	"Amiga mOsOul":       "mosoul",
+	"Amiga mOsOul":       "mo-soul",
 	"Amiga P0T-NOoDLE":   "p0t-noodle",
 	"Amiga Topaz 1":      "topaz-a500",
 	"Amiga Topaz 1+":     "topazplus-a500",

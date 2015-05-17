@@ -10,47 +10,25 @@ import (
 	"github.com/textmodes/piece/calc"
 )
 
-// "24 bit ANSi" by picoe.ca (meh)
-// http://picoe.ca/2014/03/07/24-bit-ansi/
-func (p *ANSI) parse24B(s *Sequence) (err error) {
-	var i = make([]uint8, 0)
-	for _, n := range s.Ints() {
-		if n > 0xff {
-			continue
-		}
-		i = append(i, uint8(n))
-	}
-	if len(i) != 4 {
-		return errors.New("Expected a 4 element sequence")
-	}
-
+func addRGB(p *color.Palette, r, g, b uint8) int {
 	var found bool
 	var c int
-	for c = range p.Palette {
-		switch t := p.Palette[c].(type) {
+	for c = range *p {
+		switch t := (*p)[c].(type) {
 		case *color.RGBA:
-			if t.R == i[0] && t.G == i[1] && t.B == i[2] {
+			if t.R == r && t.G == g && t.B == b {
 				found = true
 			}
 		}
 	}
 
 	if !found {
-		rgba := color.RGBA{i[1], i[2], i[3], 0xff}
-		c = len(p.Palette)
-		p.Palette = append(p.Palette, rgba)
+		rgba := color.RGBA{r, g, b, 0xff}
+		c = len(*p)
+		(*p) = append((*p), rgba)
 	}
 
-	switch i[0] {
-	case 0: // Background
-		p.buffer.Cursor.Background = c
-	case 1: // Foreground
-		p.buffer.Cursor.Color = c
-	default:
-		return errors.New("Unexpected 24 bit color selector")
-	}
-
-	return
+	return c
 }
 
 // Cursor Character Absolute
@@ -223,7 +201,7 @@ func (p *ANSI) parseSM(s *Sequence) (err error) {
 }
 
 func (p *ANSI) parseSGR(s *Sequence) (err error) {
-	for _, n := range s.Ints() {
+	for i, n := range s.Ints() {
 		switch n {
 		// ECMA-48 standard codes
 		case 0: // Default rendition
@@ -272,12 +250,68 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_CROSS_OUT
 		case 30, 31, 32, 33, 34, 35, 36, 37:
 			p.buffer.Cursor.Color = n - 30
-		case 38: // Reserved (TODO 24 bit ANSi)
+		case 38: // Extended set foreground color
+			if i > 0 {
+				s.Shift(i)
+			}
+			if s.Len() < 3 {
+				log.Printf("broken extended set background <ESC>[%s\n", s)
+				return
+			}
+			switch s.Int(1) {
+			case 2: // RGB color
+				if s.Len() >= 5 {
+					r := uint8(s.Int(2))
+					g := uint8(s.Int(3))
+					b := uint8(s.Int(4))
+					p.buffer.Cursor.Color = addRGB(&p.Palette, r, g, b)
+				} else {
+					log.Printf("broken RGB color in sequence <ESC>[%s\n", s)
+					return
+				}
+				s.Shift(5)
+			case 5: // VGA color index
+				p.buffer.Cursor.Color = s.Int(2)
+				s.Shift(3)
+			}
+			// It is, in theory, valid to have more sequences, so parse them too
+			if s.Len() > 0 {
+				p.parseSGR(s)
+			}
+			return
 		case 39: // Default display colour
 			p.buffer.Cursor.Color = buffer.TILE_DEFAULT_COLOR
 		case 40, 41, 42, 43, 44, 45, 46, 47:
 			p.buffer.Cursor.Background = n - 40
-		case 48: // Reserved (TODO 24 bit ANSi)
+		case 48: // Extended set background color
+			if i > 0 {
+				s.Shift(i)
+			}
+			if s.Len() < 3 {
+				log.Printf("broken extended set background <ESC>[%s\n", s)
+				return
+			}
+			switch s.Int(1) {
+			case 2: // RGB color
+				if s.Len() >= 5 {
+					r := uint8(s.Int(2))
+					g := uint8(s.Int(3))
+					b := uint8(s.Int(4))
+					p.buffer.Cursor.Background = addRGB(&p.Palette, r, g, b)
+				} else {
+					log.Printf("broken RGB color in sequence <ESC>[%s\n", s)
+					return
+				}
+				s.Shift(5)
+			case 5: // VGA color index
+				p.buffer.Cursor.Background = s.Int(2)
+				s.Shift(3)
+			}
+			// It is, in theory, valid to have more sequences, so parse them too
+			if s.Len() > 0 {
+				p.parseSGR(s)
+			}
+			return
 		case 49: // Default background colour
 			p.buffer.Cursor.Background = buffer.TILE_DEFAULT_BACKGROUND
 		case 50: // Reserved (cancels 26)
@@ -317,7 +351,7 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 			p.buffer.Cursor.Background = n - 94
 
 		default: // Fallthrough
-			log.Printf("unsupported SGR %d\n", n)
+			log.Printf("unsupported SGR %d (<ESC>[%s)\n", n, s)
 		}
 	}
 
@@ -336,5 +370,31 @@ func (p *ANSI) parseRCP(s *Sequence) (err error) {
 		p.buffer.Cursor.X = p.save.X
 		p.buffer.Cursor.Y = p.save.Y
 	}
+	return
+}
+
+// "24 bit ANSi" by picoe.ca (meh)
+// http://picoe.ca/2014/03/07/24-bit-ansi/
+func (p *ANSI) parseXXX(s *Sequence) (err error) {
+	var i = make([]uint8, 0)
+	for _, n := range s.Ints() {
+		if n > 0xff {
+			continue
+		}
+		i = append(i, uint8(n))
+	}
+	if len(i) != 4 {
+		return errors.New("Expected a 4 element sequence")
+	}
+
+	switch i[0] {
+	case 0: // Background
+		p.buffer.Cursor.Background = addRGB(&p.Palette, i[1], i[2], i[3])
+	case 1: // Foreground
+		p.buffer.Cursor.Color = addRGB(&p.Palette, i[1], i[2], i[3])
+	default:
+		return errors.New("Unexpected 24 bit color selector")
+	}
+
 	return
 }

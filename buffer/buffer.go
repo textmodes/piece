@@ -195,15 +195,6 @@ func (b *Buffer) PutChar(c byte) error {
 // Image returns the buffer as an image
 func (b *Buffer) Image(p color.Palette, f *font.Font) (m image.Image, err error) {
 	w, h := b.SizeMax()
-	i := image.NewRGBA(image.Rect(0, 0, f.Size.X*w, f.Size.Y*h))
-
-	colors := make([]*image.Uniform, len(p))
-	for i, c := range p {
-		colors[i] = image.NewUniform(c)
-	}
-
-	log.Printf("buffer: draw a %d x %d image with %d colorss\n",
-		i.Rect.Max.X, i.Rect.Max.Y, len(colors))
 
 	dx := f.Size.X
 	dy := f.Size.Y
@@ -212,6 +203,15 @@ func (b *Buffer) Image(p color.Palette, f *font.Font) (m image.Image, err error)
 		log.Println("buffer: adjust for 9 pixel letter spacing")
 	}
 	dp := image.Pt(dx+1, dy)
+	i := image.NewRGBA(image.Rect(0, 0, dx*w, dy*h))
+
+	colors := make([]*image.Uniform, len(p))
+	for i, c := range p {
+		colors[i] = image.NewUniform(c)
+	}
+
+	log.Printf("buffer: draw %d x %d image for %d x %d buffer with %d colors\n",
+		i.Rect.Max.X, i.Rect.Max.Y, w, h, len(colors))
 
 	// Start with a black canvas
 	draw.Draw(i, i.Bounds(), colors[0], image.ZP, draw.Src)

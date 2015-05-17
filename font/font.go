@@ -97,6 +97,18 @@ func (c *Collection) Find(name string, size image.Point) *Font {
 	return nil
 }
 
+func (c *Collection) FindSAUCE(name string) *Font {
+	if fontAlias[name] == "" {
+		return nil
+	}
+	name = fontAlias[name]
+	size := fontSize[name]
+	if size.X == 0 {
+		return nil
+	}
+	return c.Find(name, size)
+}
+
 func (c *Collection) LoadAll(path string) error {
 	matches, err := filepath.Glob(filepath.Join(path, "*.png"))
 	if err != nil {

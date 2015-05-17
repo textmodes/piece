@@ -50,7 +50,7 @@ const (
 	AnsiEF                      // 'N', Erase in Field
 	AnsiEA                      // 'O', Erase in Area
 	AnsiDCH                     // 'P', Delete Character
-	AnsiSSE                     // 'Q, ???
+	AnsiSEE                     // 'Q', Select Editing Extent
 	AnsiCPR                     // 'R', Active Position Report
 	AnsiSU                      // 'S', Scroll Up
 	AnsiSD                      // 'T', Scroll Down
@@ -85,7 +85,7 @@ const (
 	_                           // Unused
 	AnsiSKS                     // 'p', Set Keyboard String (ANSI.SYS)
 	AnsiSCP                     // 's', Save Cursor Position (ANSI.SYS)
-	Ansi24B                     // 't', "24 bit ANSi" (picoe.ca)
+	AnsiXXX                     // 't', "24 bit ANSi" (PabloDraw only)
 	AnsiRCP                     // 'u', Restore Cursor Position (ANSI.SYS)
 )
 
@@ -108,7 +108,6 @@ func New(w, h int) *ANSI {
 		transform: charmap.CodePage437.NewDecoder(),
 	}
 	p.opcode = map[byte]ansiOp{
-		Ansi24B: p.parse24B,
 		AnsiCHA: p.parseCHA,
 		AnsiCNL: p.parseCNL,
 		AnsiCPL: p.parseCHA,
@@ -126,7 +125,14 @@ func New(w, h int) *ANSI {
 		AnsiSM:  p.parseSM,
 		AnsiSCP: p.parseSCP,
 		AnsiRCP: p.parseRCP,
+		AnsiXXX: p.parseXXX,
 	}
+	return p
+}
+
+// ForceSize sets the buffer max size to the desired dimensions
+func (p *ANSI) ForceSize() *ANSI {
+	p.buffer.SizeMaxToSize()
 	return p
 }
 
@@ -156,6 +162,7 @@ func (p *ANSI) Parse(r io.Reader) (err error) {
 				state = stateANSIWaitBrace
 			case NL:
 				p.buffer.Cursor.Y++
+				p.buffer.Cursor.X = 0
 			case CR:
 				p.buffer.Cursor.X = 0
 			case TAB:
@@ -192,10 +199,6 @@ func (p *ANSI) Parse(r io.Reader) (err error) {
 				if fn == nil {
 					log.Printf("Unsupported ANSI sequence <ESC>[%s%c (0x%02x)\n", seq, ch, ch)
 				} else {
-					// Log "special" sequences for great profit
-					if ch != AnsiCUF && ch != AnsiSGR && ch != Ansi24B {
-						log.Printf("ANSI sequence <ESC>[%s%c (0x%02x)\n", seq, ch, ch)
-					}
 					if err = fn(seq); err != nil {
 						log.Printf("Parser error: %v\n", err)
 					}
@@ -391,6 +394,10 @@ func (s *Sequence) Len() int {
 func (s *Sequence) Reset() {
 	s.s = make([]string, 0)
 	s.b = make([]byte, 0)
+}
+
+func (s *Sequence) Shift(n int) {
+	s.s = s.s[n:]
 }
 
 func (s *Sequence) String() string {
