@@ -7,7 +7,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"log"
 	"os"
 
 	"github.com/textmodes/piece/calc"
@@ -90,9 +89,11 @@ func (b *Buffer) FromMemory(m []byte) (err error) {
 	if len(m) < l {
 		return errors.New("Insufficient data")
 	}
-	if len(m) != l {
-		log.Printf("buffer: got %d bytes of memory, expected %d\n", len(m), l)
-	}
+	/*
+		if len(m) != l {
+			log.Printf("buffer: got %d bytes of memory, expected %d\n", len(m), l)
+		}
+	*/
 
 	b.Expand(b.Height * b.Width)
 	for y := 0; y < b.Height; y++ {
@@ -199,8 +200,8 @@ func (b *Buffer) Image(p color.Palette, f *font.Font) (m image.Image, err error)
 	dx := f.Size.X
 	dy := f.Size.Y
 	if b.Flags.LetterSpacing&sauce.LetterSpacing9Pixel > 0 {
+		// Adjust for 9 pixel letter spacing
 		dx++
-		log.Println("buffer: adjust for 9 pixel letter spacing")
 	}
 	dp := image.Pt(dx+1, dy)
 	i := image.NewRGBA(image.Rect(0, 0, dx*w, dy*h))
@@ -210,8 +211,10 @@ func (b *Buffer) Image(p color.Palette, f *font.Font) (m image.Image, err error)
 		colors[i] = image.NewUniform(c)
 	}
 
-	log.Printf("buffer: draw %d x %d image for %d x %d buffer with %d colors\n",
-		i.Rect.Max.X, i.Rect.Max.Y, w, h, len(colors))
+	/*
+		log.Printf("buffer: draw %d x %d image for %d x %d buffer with %d colors\n",
+			i.Rect.Max.X, i.Rect.Max.Y, w, h, len(colors))
+	*/
 
 	// Start with a black canvas
 	draw.Draw(i, i.Bounds(), colors[0], image.ZP, draw.Src)

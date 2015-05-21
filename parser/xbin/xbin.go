@@ -10,12 +10,11 @@ import (
 	"image/color"
 	"io"
 	"io/ioutil"
-	"log"
 
 	"github.com/textmodes/piece/buffer"
 	"github.com/textmodes/piece/font"
 	"github.com/textmodes/piece/parser"
-	"github.com/textmodes/piece/parser/ansi"
+	"github.com/textmodes/piece/parser/binarytext"
 	"github.com/textmodes/sauce"
 )
 
@@ -82,7 +81,7 @@ type Header struct {
 // New initializes a new eXtended Binary parser
 func New() *XBIN {
 	p := &XBIN{
-		Palette: &ansi.CGAPalette,
+		Palette: &binarytext.BINPalette,
 		buffer:  buffer.New(80, 1),
 	}
 	return p
@@ -106,7 +105,7 @@ func (p *XBIN) Parse(r io.Reader) (err error) {
 
 	// Parse palette, if set
 	if p.header.Flags&FlagPalette > 0 {
-		log.Println("xbin: custom palette")
+		//log.Println("xbin: custom palette")
 		pal := color.Palette{}
 
 		for i := 0; i < 16; i++ {
@@ -165,7 +164,7 @@ func (p *XBIN) Parse(r io.Reader) (err error) {
 	// Initialize buffer
 	w := int(p.header.Width)
 	h := int(p.header.Height)
-	log.Printf("xbin: creating a %d x %d piece\n", w, h)
+	//log.Printf("xbin: creating a %d x %d piece\n", w, h)
 	p.buffer = buffer.New(w, h)
 
 	// Parse remaining data, scanning for a SAUCE header
@@ -178,7 +177,7 @@ func (p *XBIN) Parse(r io.Reader) (err error) {
 		err = nil // Don't bleed unimportant SAUCE warnings
 	}
 
-	log.Printf("xbin: loading %d bytes of memory\n", len(p.data))
+	//log.Printf("xbin: loading %d bytes of memory\n", len(p.data))
 	p.buffer.FromMemory(p.data)
 	return
 }

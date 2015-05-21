@@ -146,7 +146,7 @@ func (p *ANSI) Parse(r io.Reader) (err error) {
 	for state != stateExit {
 		var ch byte
 		if ch, err = buf.ReadByte(); err != nil {
-			log.Printf("exit parser: err=%v, t=%d\n", err, t)
+			//log.Printf("exit parser: err=%v, t=%d\n", err, t)
 			state = stateExit
 			continue
 		}

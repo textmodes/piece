@@ -8,7 +8,6 @@ import (
 
 	"github.com/textmodes/piece/buffer"
 	"github.com/textmodes/piece/font"
-	"github.com/textmodes/piece/parser/ansi"
 	"github.com/textmodes/sauce"
 )
 
@@ -20,7 +19,7 @@ type BinaryText struct {
 
 func New() *BinaryText {
 	p := &BinaryText{
-		Palette: &ansi.CGAPalette,
+		Palette: &BINPalette,
 	}
 	return p
 }
