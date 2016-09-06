@@ -17,14 +17,65 @@ import (
 	"git.maze.io/maze/go-piece/parser"
 	"git.maze.io/maze/go-piece/parser/ansi"
 	"git.maze.io/maze/go-piece/parser/binarytext"
+	"git.maze.io/maze/go-piece/parser/irc"
 	"git.maze.io/maze/go-piece/parser/xbin"
 	sauce "git.maze.io/maze/go-sauce"
 )
 
+var supportedParser = [][]string{
+	[]string{"ANSi/ASCII", "ansi", "ascii", "text"},
+	[]string{"Binary text (raw VGA page)", "bin", "binarytext"},
+	[]string{"IRC log with mIRC formatting", "irc", "mirc"},
+	[]string{"eXtended Binary text", "xbin"},
+}
+
+func guessParser(filename, option string) parser.Parser {
+	if option != "" {
+		switch strings.ToLower(option) {
+		case "help", "list":
+			fmt.Fprintln(os.Stderr, "Supported parsers:")
+			for _, p := range supportedParser {
+				var (
+					o = p[0]
+					a = p[1:]
+				)
+				fmt.Fprintf(os.Stderr, "\n\t%s:\n", strings.Join(a, ", "))
+				fmt.Fprintf(os.Stderr, "\t\t%s\n", o)
+			}
+			fmt.Fprintln(os.Stderr, "")
+			return nil
+		case "ansi", "ascii", "text":
+			return ansi.New(80, 25)
+		case "bin", "binarytext":
+			return binarytext.New()
+		case "irc", "mirc":
+			return irc.New()
+		case "xbin":
+			return xbin.New()
+		}
+	}
+
+	switch strings.ToLower(filepath.Ext(filename)) {
+	case ".asc", ".ans", ".txt", ".diz", ".lit":
+		return ansi.New(80, 25)
+
+	case ".bin":
+		return binarytext.New()
+
+	case ".irc", ".log":
+		return irc.New()
+
+	case ".xb":
+		return xbin.New()
+	}
+
+	return nil
+}
+
 func main() {
 	formatFlag := flag.String("format", "html", "Output format")
 	outputFlag := flag.String("output", "", "Output filename")
-	//parserFlag := flag.String("parser", "", "Parser (default: autodetect)")
+	parserFlag := flag.String("parser", "", "Parser (default: autodetect)")
 	fontFlag := flag.String("font", "", "Font override")
 	fontSizeFlag := flag.String("font-size", "", "Font size override")
 	defaultFontFlag := flag.String("default-font", "cp437", "Default font")
@@ -73,17 +124,9 @@ func main() {
 	if err != nil && err != sauce.ErrNoRecord {
 		log.Printf("%s: failed to parse SAUCE: %v\n", filename, err)
 	}
-	if s == nil {
-		switch strings.ToLower(filepath.Ext(filename)) {
-		case ".asc", ".ans", ".txt", ".diz", ".lit":
-			p = ansi.New(w, h)
+	if s == nil || *parserFlag != "" {
+		p = guessParser(filename, *parserFlag)
 
-		case ".bin":
-			p = binarytext.New()
-
-		case ".xb":
-			p = xbin.New()
-		}
 	} else {
 		switch s.DataType {
 		case sauce.DataTypeCharacter:
