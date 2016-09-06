@@ -1,4 +1,4 @@
-package calc
+package math
 
 func DivMod(a, b int) (d, m int) {
 	d = a / b

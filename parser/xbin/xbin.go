@@ -11,11 +11,11 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/textmodes/piece/buffer"
-	"github.com/textmodes/piece/font"
-	"github.com/textmodes/piece/parser"
-	"github.com/textmodes/piece/parser/binarytext"
-	"github.com/textmodes/sauce"
+	"git.maze.io/maze/go-piece/buffer"
+	"git.maze.io/maze/go-piece/font"
+	"git.maze.io/maze/go-piece/parser"
+	"git.maze.io/maze/go-piece/parser/binarytext"
+	sauce "git.maze.io/maze/go-sauce"
 )
 
 var (
@@ -67,6 +67,7 @@ type XBIN struct {
 	data    []byte
 	font    *font.Font
 	header  Header
+	sauce   *sauce.SAUCE
 }
 
 // Header implements the eXtended Binary header format
@@ -183,13 +184,40 @@ func (p *XBIN) Parse(r io.Reader) (err error) {
 }
 
 // HTML returns the internal buffer as HTML.
-func (p *XBIN) HTML() (h string, err error) {
+func (p *XBIN) HTML(full bool) (h string) {
 	return
+}
+
+// String returns the internal buffer as string.
+func (p *XBIN) String() string {
+	var b []byte
+
+	w, h := p.buffer.Size()
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			b = append(b, p.buffer.TileAt(x, y).Char)
+		}
+		b = append(b, []byte("\r\n")...)
+	}
+
+	return string(b)
 }
 
 // Font returns the font for this XBIN.
 func (p *XBIN) Font() *font.Font {
 	return p.font
+}
+
+// Width returns the number of columns.
+func (p *XBIN) Width() int {
+	w, _ := p.buffer.Size()
+	return w
+}
+
+// Height returns the number of rows.
+func (p *XBIN) Height() int {
+	_, h := p.buffer.Size()
+	return h
 }
 
 // Image returns the internal buffer as an image.
@@ -200,6 +228,10 @@ func (p *XBIN) Image(f *font.Font) (m image.Image, err error) {
 // SetFlags imports SAUCE flags
 func (p *XBIN) SetFlags(f sauce.TFlags) {
 	p.buffer.Flags = f
+}
+
+func (p *XBIN) SAUCE() *sauce.SAUCE {
+	return p.sauce
 }
 
 func decompress(src io.Reader, size int) (dst []byte, err error) {

@@ -7,11 +7,10 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"os"
 
-	"github.com/textmodes/piece/calc"
-	"github.com/textmodes/piece/font"
-	"github.com/textmodes/sauce"
+	"git.maze.io/maze/go-piece/font"
+	"git.maze.io/maze/go-piece/math"
+	sauce "git.maze.io/maze/go-sauce"
 )
 
 var (
@@ -63,7 +62,7 @@ func (b *Buffer) ClearFrom(o int) {
 
 // ClearTo clears all Tiles up until offset o
 func (b *Buffer) ClearTo(o int) {
-	for o = calc.MinInt(o, len(b.Tiles)); o >= 0; o-- {
+	for o = math.MinInt(o, len(b.Tiles)); o >= 0; o-- {
 		b.Tiles[o] = nil
 	}
 }
@@ -108,10 +107,7 @@ func (b *Buffer) FromMemory(m []byte) (err error) {
 			t.Char = m[mo]
 			t.Color = int(m[mo+1] & 0x0f)
 			t.Background = int((m[mo+1] & 0xf0) >> 4)
-
-			fmt.Fprintf(os.Stdout, "%c", t.Char)
 		}
-		fmt.Fprintln(os.Stdout, "")
 	}
 
 	// Update boundaries
@@ -135,11 +131,17 @@ func (b *Buffer) Normalize() *Buffer {
 
 // Resize to at least a w x h canvas. If w exceeds the maximum buffer width an
 // error is thrown.
-func (b *Buffer) Resize(w, h int) (*Buffer, error) {
-	return nil, errors.New("Not implemented")
+func (b *Buffer) Resize(w, h int) error {
+	if w*h > len(b.Tiles) {
+		return fmt.Errorf("buffer: %dx%d=%d exceeds %d tiles", w, h, w*h, len(b.Tiles))
+	}
+	b.Width = w
+	b.Height = h
+	b.Tiles = b.Tiles[:w*h]
+	return nil
 }
 
-// Size calculates the allocated buffer size.
+// Size mathulates the allocated buffer size.
 func (b *Buffer) Size() (w int, h int) {
 	var l int
 	l = b.Len()
@@ -188,8 +190,8 @@ func (b *Buffer) PutChar(c byte) error {
 	t.Update(&b.Cursor.Tile)
 	b.Cursor.X++
 	b.Cursor.NormalizeAndWrap(b.Width)
-	b.maxWidth = calc.MaxInt(b.maxWidth, b.Cursor.X)
-	b.maxHeight = calc.MaxInt(b.maxHeight, b.Cursor.Y)
+	b.maxWidth = math.MaxInt(b.maxWidth, b.Cursor.X)
+	b.maxHeight = math.MaxInt(b.maxHeight, b.Cursor.Y)
 	return nil
 }
 

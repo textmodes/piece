@@ -6,8 +6,8 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/textmodes/piece/buffer"
-	"github.com/textmodes/piece/calc"
+	"git.maze.io/maze/go-piece/buffer"
+	"git.maze.io/maze/go-piece/math"
 )
 
 func addRGB(p *color.Palette, r, g, b uint8) int {
@@ -37,7 +37,7 @@ func (p *ANSI) parseCHA(s *Sequence) (err error) {
 	if s.Len() > 0 {
 		x = s.Int(0) - 1
 	}
-	p.buffer.Cursor.X = calc.MaxInt(0, x)
+	p.buffer.Cursor.X = math.MaxInt(0, x)
 	return
 }
 
@@ -65,19 +65,19 @@ func (p *ANSI) parseCPL(s *Sequence) (err error) {
 
 // Cursor Left
 func (p *ANSI) parseCUB(s *Sequence) (err error) {
-	p.buffer.Cursor.Left(calc.MaxInt(1, s.Int(0)))
+	p.buffer.Cursor.Left(math.MaxInt(1, s.Int(0)))
 	return
 }
 
 // Cursor Down
 func (p *ANSI) parseCUD(s *Sequence) (err error) {
-	p.buffer.Cursor.Down(calc.MaxInt(1, s.Int(0)))
+	p.buffer.Cursor.Down(math.MaxInt(1, s.Int(0)))
 	return
 }
 
 // Cursor Right
 func (p *ANSI) parseCUF(s *Sequence) (err error) {
-	p.buffer.Cursor.Right(calc.MaxInt(1, s.Int(0)))
+	p.buffer.Cursor.Right(math.MaxInt(1, s.Int(0)))
 	return
 }
 
@@ -92,13 +92,13 @@ func (p *ANSI) parseCUP(s *Sequence) (err error) {
 	case 1:
 		y = s.Int(0)
 	}
-	p.buffer.Cursor.Goto(calc.MaxInt(0, x-1), calc.MaxInt(0, y-1))
+	p.buffer.Cursor.Goto(math.MaxInt(0, x-1), math.MaxInt(0, y-1))
 	return
 }
 
 // Cursor Up
 func (p *ANSI) parseCUU(s *Sequence) (err error) {
-	p.buffer.Cursor.Up(calc.MaxInt(1, s.Int(0)))
+	p.buffer.Cursor.Up(math.MaxInt(1, s.Int(0)))
 	return
 }
 
@@ -136,8 +136,8 @@ func (p *ANSI) parseEL(s *Sequence) (err error) {
 		e = (p.buffer.Width * (p.buffer.Cursor.Y + 1)) - 1
 	}
 
-	o = calc.MaxInt(o, 0)
-	e = calc.MinInt(e, p.buffer.Len())
+	o = math.MaxInt(o, 0)
+	e = math.MinInt(e, p.buffer.Len())
 
 	for i = o; i < e; i++ {
 		p.buffer.ClearAt(i)
@@ -271,6 +271,9 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 				}
 				s.Shift(5)
 			case 5: // VGA color index
+				if len(p.Palette) == 16 {
+					p.Palette = VGAPalette
+				}
 				p.buffer.Cursor.Color = s.Int(2)
 				s.Shift(3)
 			}
@@ -304,6 +307,9 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 				}
 				s.Shift(5)
 			case 5: // VGA color index
+				if len(p.Palette) == 16 {
+					p.Palette = VGAPalette
+				}
 				p.buffer.Cursor.Background = s.Int(2)
 				s.Shift(3)
 			}

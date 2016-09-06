@@ -6,7 +6,7 @@ import (
 	"image/color"
 	"log"
 
-	"github.com/textmodes/piece/calc"
+	"git.maze.io/maze/go-piece/math"
 )
 
 type BitMask struct {
@@ -23,7 +23,7 @@ func (p *BitMask) At(x, y int) color.Color {
 		log.Printf("bitmask: x=%d out of bounds (%d)\n", x, 8*len(p.Bitmap))
 	}
 
-	dx, mx := calc.DivMod(x, 8)
+	dx, mx := math.DivMod(x, 8)
 	o := p.CharHeight*dx + y
 	px := uint8(1 << uint8(7-mx))
 

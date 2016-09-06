@@ -3,19 +3,24 @@ package ansi
 
 import (
 	"bufio"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"image"
 	"image/color"
 	"io"
+	"io/ioutil"
 	"log"
 	"strconv"
 	"strings"
 
-	"github.com/textmodes/piece/buffer"
-	"github.com/textmodes/piece/calc"
-	"github.com/textmodes/piece/font"
-	"github.com/textmodes/piece/parser"
-	"github.com/textmodes/sauce"
+	"git.maze.io/maze/go-piece/buffer"
+	"git.maze.io/maze/go-piece/font"
+	"git.maze.io/maze/go-piece/math"
+	"git.maze.io/maze/go-piece/parser"
+	sauce "git.maze.io/maze/go-sauce"
+
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
 )
@@ -98,12 +103,13 @@ type ANSI struct {
 	opcode    map[byte]ansiOp
 	transform transform.Transformer
 	save      *buffer.Cursor
+	sauce     *sauce.SAUCE
 }
 
 // New initializes a new ANSi parser with an initial given width and height
 func New(w, h int) *ANSI {
 	p := &ANSI{
-		Palette:   VGAPalette,
+		Palette:   CGAPalette,
 		buffer:    buffer.New(w, h),
 		transform: charmap.CodePage437.NewDecoder(),
 	}
@@ -146,7 +152,10 @@ func (p *ANSI) Parse(r io.Reader) (err error) {
 	for state != stateExit {
 		var ch byte
 		if ch, err = buf.ReadByte(); err != nil {
-			//log.Printf("exit parser: err=%v, t=%d\n", err, t)
+			// EOF is to be expected
+			if err == io.EOF {
+				err = nil
+			}
 			state = stateExit
 			continue
 		}
@@ -158,6 +167,37 @@ func (p *ANSI) Parse(r io.Reader) (err error) {
 			switch ch {
 			case SUB: // End Of File
 				state = stateExit
+
+				// Parse remainder to check the SAUCE record
+				if b, errs := ioutil.ReadAll(buf); errs == nil || errs == io.EOF {
+					if p.sauce, errs = sauce.ParseBytes(b); errs != nil {
+						log.Printf("ansi: %v\n", errs)
+					}
+				}
+
+				/*
+					var b = make([]byte, 128)
+					_, errb := io.ReadFull(buf, b)
+					if errb == nil {
+						s, errs := sauce.ParseBytes(b)
+						if errs == nil && s != nil && s.DataType == 1 && s.FileType >= 0 && s.FileType <= 5 {
+							log.Println("SAUCE:")
+							s.Dump()
+							w := s.TInfo[0]
+							h := s.TInfo[1]
+							if w != 0 && w != 80 {
+								if err = p.buffer.Resize(int(w), int(h)); err != nil {
+									log.Printf("ansi: resize failed: %v\n", err)
+									return
+								}
+							}
+						} else {
+							log.Printf("sauce: %v\n", errs)
+						}
+					} else {
+						log.Printf("errb: %v\n", errb)
+					}
+				*/
 			case ESC:
 				state = stateANSIWaitBrace
 			case NL:
@@ -215,7 +255,7 @@ func (p *ANSI) Parse(r io.Reader) (err error) {
 		}
 	}
 
-	return nil
+	return
 }
 
 // SetFlags imports SAUCE flags.
@@ -224,30 +264,35 @@ func (p *ANSI) SetFlags(f sauce.TFlags) {
 }
 
 // HTML returns the internal buffer as HTML.
-func (p *ANSI) HTML() (s string, err error) {
-	s += "<!doctype html>\n"
-	s += "<link rel=\"stylesheet\" href=\"cp437.css\">\n"
+func (p *ANSI) HTML(full bool) (s string) {
+	if full {
+		s += "<!doctype html>\n"
+		s += "<link rel=\"stylesheet\" href=\"cp437.css\">\n"
+	}
+	a := randomPrefix(3)
 	s += "<style type=\"text/css\">\n"
 	for i := 0; i < len(p.Palette); i++ {
 		r, g, b, _ := p.Palette[i].RGBA()
-		c := fmt.Sprintf("#%02x%02x%02x", r, g, b)
-		s += fmt.Sprintf(".f%02x{color:%s} ", i, c)
-		s += fmt.Sprintf(".b%02x{background-color:%s} ", i, c)
-		s += fmt.Sprintf(".u%02x{border-bottom:1px solid %s}", i, c)
+		c := fmt.Sprintf("#%02x%02x%02x", r>>8, g>>8, b>>8)
+		s += fmt.Sprintf(".f%s%02x{color:%s} ", a, i, c)
+		s += fmt.Sprintf(".b%s%02x{background-color:%s} ", a, i, c)
+		s += fmt.Sprintf(".u%s%02x{border-bottom:1px solid %s}", a, i, c)
 		s += "\n"
 	}
 	s += `.i{font-variant:italics} .u{border-bottom:1px} .ud{border-bottom:3px dashed #000}`
 	s += "</style>"
-
-	s += fmt.Sprintf(`<pre><span class="b%02x f%02x">`,
-		buffer.TILE_DEFAULT_BACKGROUND,
-		buffer.TILE_DEFAULT_COLOR)
+	if full {
+		s += `<pre>`
+	}
+	s += fmt.Sprintf(`<span class="b%s%02x f%s%02x">`,
+		a, buffer.TILE_DEFAULT_BACKGROUND,
+		a, buffer.TILE_DEFAULT_COLOR)
 
 	w, h := p.buffer.SizeMax()
 	var l *buffer.Tile
 
 	for o, t := range p.buffer.Tiles {
-		y, x := calc.DivMod(o, p.buffer.Width)
+		y, x := math.DivMod(o, p.buffer.Width)
 		if x >= w {
 			continue
 		}
@@ -280,8 +325,8 @@ func (p *ANSI) HTML() (s string, err error) {
 			if t.Attrib&buffer.ATTRIB_NEGATIVE == buffer.ATTRIB_NEGATIVE {
 				f, b = b, f
 			}
-			c = append(c, fmt.Sprintf("b%02x", b))
-			c = append(c, fmt.Sprintf("f%02x", f))
+			c = append(c, fmt.Sprintf("b%s%02x", a, b))
+			c = append(c, fmt.Sprintf("f%s%02x", a, f))
 			if t.Attrib&buffer.ATTRIB_ITALICS > 0 {
 				c = append(c, "i")
 			}
@@ -305,7 +350,9 @@ func (p *ANSI) HTML() (s string, err error) {
 	}
 
 	s += `</span>`
-	s += `</pre>`
+	if full {
+		s += `</pre>`
+	}
 	return
 }
 
@@ -335,6 +382,12 @@ func (p *ANSI) String() (s string) {
 	}
 	return
 }
+
+func (p *ANSI) Width() int          { return p.buffer.Width }
+func (p *ANSI) Height() int         { return p.buffer.Height }
+func (p *ANSI) SAUCE() *sauce.SAUCE { return p.sauce }
+
+var _ parser.Parser = (*ANSI)(nil)
 
 // Sequence holds an ANSi escape sequence.
 type Sequence struct {
@@ -411,4 +464,9 @@ func (s *Sequence) StringAt(n int) (out string) {
 	return
 }
 
-var _ parser.Parser = (*ANSI)(nil)
+func randomPrefix(size int) string {
+	var buf = make([]byte, size)
+	io.ReadFull(rand.Reader, buf)
+	var sum = sha256.New().Sum(buf)
+	return hex.EncodeToString(sum)[:size]
+}

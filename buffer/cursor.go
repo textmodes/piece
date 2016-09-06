@@ -1,6 +1,6 @@
 package buffer
 
-import "github.com/textmodes/piece/calc"
+import "git.maze.io/maze/go-piece/math"
 
 type Cursor struct {
 	X, Y int
@@ -30,22 +30,22 @@ func (c *Cursor) Advance(w int) *Cursor {
 
 // Goto moves the cursor to the requested coordinates.
 func (c *Cursor) Goto(x, y int) *Cursor {
-	c.X = calc.MaxInt(0, x)
-	c.Y = calc.MaxInt(0, y)
+	c.X = math.MaxInt(0, x)
+	c.Y = math.MaxInt(0, y)
 	return c
 }
 
 // Normalize ensures cursor is inside the bounding box.
 func (c *Cursor) Normalize(w, h int) *Cursor {
-	c.X = calc.MaxInt(0, calc.MinInt(c.X, w))
-	c.Y = calc.MaxInt(0, calc.MinInt(c.Y, h))
+	c.X = math.MaxInt(0, math.MinInt(c.X, w))
+	c.Y = math.MaxInt(0, math.MinInt(c.Y, h))
 	return c
 }
 
 // NormalizeAndWrap ensures cursor is inside the bounding box, and wraps to the next line if there is a horizontal overflow.
 func (c *Cursor) NormalizeAndWrap(w int) *Cursor {
 	var dy int
-	dy, c.X = calc.DivMod(c.X, w)
+	dy, c.X = math.DivMod(c.X, w)
 	c.Y += dy
 	return c.Normalize(w, c.Y)
 }
@@ -56,7 +56,7 @@ func (c *Cursor) Pos() (int, int) {
 }
 
 func (c *Cursor) Up(i int) {
-	c.Y = calc.MaxInt(0, c.Y-i)
+	c.Y = math.MaxInt(0, c.Y-i)
 }
 
 func (c *Cursor) Down(i int) {
@@ -64,7 +64,7 @@ func (c *Cursor) Down(i int) {
 }
 
 func (c *Cursor) Left(i int) {
-	c.X = calc.MaxInt(0, c.X-i)
+	c.X = math.MaxInt(0, c.X-i)
 }
 
 func (c *Cursor) Right(i int) {

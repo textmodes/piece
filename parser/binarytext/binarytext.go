@@ -6,9 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/textmodes/piece/buffer"
-	"github.com/textmodes/piece/font"
-	"github.com/textmodes/sauce"
+	"git.maze.io/maze/go-piece/buffer"
+	"git.maze.io/maze/go-piece/font"
+	sauce "git.maze.io/maze/go-sauce"
 )
 
 type BinaryText struct {
@@ -46,7 +46,7 @@ func (p *BinaryText) Parse(r io.Reader) (err error) {
 	h := int(len(b) / w / 2)
 	p.buffer = buffer.New(w, h)
 	p.buffer.FromMemory(b)
-	return
+	return nil
 }
 
 // Font returns the font (always nil, no embedded font support)
