@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"git.maze.io/maze/go-piece/buffer"
+	"git.maze.io/maze/go-piece/buffer/attribute"
 	"git.maze.io/maze/go-piece/math"
 )
 
@@ -205,49 +206,49 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 		switch n {
 		// ECMA-48 standard codes
 		case 0: // Default rendition
-			p.buffer.Cursor.ResetAttrib()
+			p.buffer.Cursor.ResetAttributes()
 		case 1: // Bold
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_BOLD
+			p.buffer.Cursor.Attributes |= attribute.Bold
 		case 2: // Faint
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_FAINT
+			p.buffer.Cursor.Attributes |= attribute.Faint
 		case 3: // Italicized
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_ITALICS
+			p.buffer.Cursor.Attributes |= attribute.Italics
 		case 4: // Underlined
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_UNDERLINE_DOUBLE
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_UNDERLINE
+			p.buffer.Cursor.Attributes &^= attribute.DoubleUnderline
+			p.buffer.Cursor.Attributes |= attribute.Underline
 		case 5, 6: // Blink
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_BLINK
+			p.buffer.Cursor.Attributes |= attribute.Blink
 		case 7: // Negative
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_NEGATIVE
+			p.buffer.Cursor.Attributes |= attribute.Negative
 		case 8: // Concealed characters
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_CONCEAL
+			p.buffer.Cursor.Attributes |= attribute.Conceal
 		case 9: // Crossed-out
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_CROSS_OUT
+			p.buffer.Cursor.Attributes |= attribute.CrossedOut
 		case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19:
 			p.buffer.Cursor.Font = n - 10
 		case 20: // Fraktur (Gothic)
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_GOTHIC
+			p.buffer.Cursor.Attributes |= attribute.Gothic
 		case 21: // Doubly underlined
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_UNDERLINE
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_UNDERLINE_DOUBLE
+			p.buffer.Cursor.Attributes &^= attribute.Underline
+			p.buffer.Cursor.Attributes |= attribute.DoubleUnderline
 		case 22: // Neither bold nor faint
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_BOLD
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_FAINT
+			p.buffer.Cursor.Attributes &^= attribute.Bold
+			p.buffer.Cursor.Attributes &^= attribute.Faint
 		case 23: // Neither italicized nor fraktur
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_ITALICS
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_GOTHIC
+			p.buffer.Cursor.Attributes &^= attribute.Italics
+			p.buffer.Cursor.Attributes &^= attribute.Gothic
 		case 24: // Not underlined
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_UNDERLINE
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_UNDERLINE_DOUBLE
+			p.buffer.Cursor.Attributes &^= attribute.Underline
+			p.buffer.Cursor.Attributes &^= attribute.DoubleUnderline
 		case 25: // Not blinking
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_BLINK
+			p.buffer.Cursor.Attributes &^= attribute.Blink
 		case 26: // Reserved
 		case 27: // Positive
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_NEGATIVE
+			p.buffer.Cursor.Attributes &^= attribute.Negative
 		case 28: // Revealed
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_CONCEAL
+			p.buffer.Cursor.Attributes &^= attribute.Conceal
 		case 29: // Not crossed out
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_CROSS_OUT
+			p.buffer.Cursor.Attributes &^= attribute.CrossedOut
 		case 30, 31, 32, 33, 34, 35, 36, 37:
 			p.buffer.Cursor.Color = n - 30
 		case 38: // Extended set foreground color
@@ -283,7 +284,7 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 			}
 			return
 		case 39: // Default display colour
-			p.buffer.Cursor.Color = buffer.TILE_DEFAULT_COLOR
+			p.buffer.Cursor.Color = buffer.DefaultColor
 		case 40, 41, 42, 43, 44, 45, 46, 47:
 			p.buffer.Cursor.Background = n - 40
 		case 48: // Extended set background color
@@ -319,36 +320,36 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 			}
 			return
 		case 49: // Default background colour
-			p.buffer.Cursor.Background = buffer.TILE_DEFAULT_BACKGROUND
+			p.buffer.Cursor.Background = buffer.DefaultBackground
 		case 50: // Reserved (cancels 26)
 		case 51: // Framed
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_FRAME
+			p.buffer.Cursor.Attributes |= attribute.Frame
 		case 52: // Encircled
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_ENCIRCLE
+			p.buffer.Cursor.Attributes |= attribute.Encircle
 		case 53: // Overlined
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_OVERLINE
+			p.buffer.Cursor.Attributes |= attribute.Overline
 		case 54: // Not framed nor encircled
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_FRAME
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_ENCIRCLE
+			p.buffer.Cursor.Attributes &^= attribute.Frame
+			p.buffer.Cursor.Attributes &^= attribute.Encircle
 		case 55: // Not overlined
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_OVERLINE
+			p.buffer.Cursor.Attributes &^= attribute.Overline
 		case 56, 57, 58, 59: // Reserved
 		case 60: // Ideogram underline
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_IDEOGRAM_UNDERLINE
+			p.buffer.Cursor.Attributes |= attribute.IdeogramUnderline
 		case 61: // Ideogram double underline
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_IDEOGRAM_UNDERLINE_DOUBLE
+			p.buffer.Cursor.Attributes |= attribute.IdeogramDoubleUnderline
 		case 62: // Ideogram overline
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_IDEOGRAM_OVERLINE
+			p.buffer.Cursor.Attributes |= attribute.IdeogramOverline
 		case 63: // Ideogram double overline
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_IDEOGRAM_OVERLINE_DOUBLE
+			p.buffer.Cursor.Attributes |= attribute.IdeogramDoubleOverline
 		case 64: // Ideogram stress marking
-			p.buffer.Cursor.Attrib |= buffer.ATTRIB_IDEOGRAM_STRESS_MARKING
+			p.buffer.Cursor.Attributes |= attribute.IdeogramStressMarking
 		case 65: // Cancels 60..64
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_IDEOGRAM_UNDERLINE
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_IDEOGRAM_UNDERLINE_DOUBLE
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_IDEOGRAM_OVERLINE
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_IDEOGRAM_OVERLINE_DOUBLE
-			p.buffer.Cursor.Attrib &^= buffer.ATTRIB_IDEOGRAM_STRESS_MARKING
+			p.buffer.Cursor.Attributes &^= attribute.IdeogramUnderline
+			p.buffer.Cursor.Attributes &^= attribute.IdeogramDoubleUnderline
+			p.buffer.Cursor.Attributes &^= attribute.IdeogramOverline
+			p.buffer.Cursor.Attributes &^= attribute.IdeogramDoubleOverline
+			p.buffer.Cursor.Attributes &^= attribute.IdeogramStressMarking
 
 		// Non default aixterm codes, bright color variants
 		case 90, 91, 92, 93, 94, 95, 96, 97:

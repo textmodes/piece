@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"git.maze.io/maze/go-piece/buffer"
+	"git.maze.io/maze/go-piece/buffer/attribute"
 	"git.maze.io/maze/go-piece/font"
 	"git.maze.io/maze/go-piece/math"
 	"git.maze.io/maze/go-piece/parser"
@@ -175,36 +176,16 @@ func (p *ANSI) Parse(r io.Reader) (err error) {
 					}
 				}
 
-				/*
-					var b = make([]byte, 128)
-					_, errb := io.ReadFull(buf, b)
-					if errb == nil {
-						s, errs := sauce.ParseBytes(b)
-						if errs == nil && s != nil && s.DataType == 1 && s.FileType >= 0 && s.FileType <= 5 {
-							log.Println("SAUCE:")
-							s.Dump()
-							w := s.TInfo[0]
-							h := s.TInfo[1]
-							if w != 0 && w != 80 {
-								if err = p.buffer.Resize(int(w), int(h)); err != nil {
-									log.Printf("ansi: resize failed: %v\n", err)
-									return
-								}
-							}
-						} else {
-							log.Printf("sauce: %v\n", errs)
-						}
-					} else {
-						log.Printf("errb: %v\n", errb)
-					}
-				*/
 			case ESC:
 				state = stateANSIWaitBrace
+
 			case NL:
 				p.buffer.Cursor.Y++
 				p.buffer.Cursor.X = 0
+
 			case CR:
 				p.buffer.Cursor.X = 0
+
 			case TAB:
 				c := (p.buffer.Cursor.X + 1) % tabStop
 				if c > 0 {
@@ -285,8 +266,8 @@ func (p *ANSI) HTML(full bool) (s string, err error) {
 		s += `<pre>`
 	}
 	s += fmt.Sprintf(`<span class="b%s%02x f%s%02x">`,
-		a, buffer.TILE_DEFAULT_BACKGROUND,
-		a, buffer.TILE_DEFAULT_COLOR)
+		a, buffer.DefaultBackground,
+		a, buffer.DefaultColor)
 
 	w, h := p.buffer.SizeMax()
 	var l *buffer.Tile
@@ -316,24 +297,24 @@ func (p *ANSI) HTML(full bool) (s string, err error) {
 			b := t.Background
 			c := []string{}
 
-			if t.Attrib&buffer.ATTRIB_BOLD == buffer.ATTRIB_BOLD {
+			if t.Attributes&attribute.Bold == attribute.Bold {
 				f += 8
 			}
-			if t.Attrib&buffer.ATTRIB_BLINK == buffer.ATTRIB_BLINK {
+			if t.Attributes&attribute.Blink == attribute.Blink {
 				b += 8
 			}
-			if t.Attrib&buffer.ATTRIB_NEGATIVE == buffer.ATTRIB_NEGATIVE {
+			if t.Attributes&attribute.Negative == attribute.Negative {
 				f, b = b, f
 			}
 			c = append(c, fmt.Sprintf("b%s%02x", a, b))
 			c = append(c, fmt.Sprintf("f%s%02x", a, f))
-			if t.Attrib&buffer.ATTRIB_ITALICS > 0 {
+			if t.Attributes&attribute.Italics > 0 {
 				c = append(c, "i")
 			}
-			if t.Attrib&buffer.ATTRIB_UNDERLINE > 0 {
+			if t.Attributes&attribute.Underline > 0 {
 				c = append(c, fmt.Sprintf("u%02x", f))
 			}
-			if t.Attrib&buffer.ATTRIB_UNDERLINE_DOUBLE > 0 {
+			if t.Attributes&attribute.DoubleUnderline > 0 {
 				c = append(c, "ud")
 			}
 

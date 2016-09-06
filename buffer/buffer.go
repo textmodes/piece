@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"image/draw"
 
+	"git.maze.io/maze/go-piece/buffer/attribute"
 	"git.maze.io/maze/go-piece/font"
 	"git.maze.io/maze/go-piece/math"
 	sauce "git.maze.io/maze/go-sauce"
@@ -103,7 +104,7 @@ func (b *Buffer) FromMemory(m []byte) (err error) {
 			to := (y * b.Width) + x
 
 			t := b.Tile(to)
-			t.Attrib = 0
+			t.Attributes = 0
 			t.Char = m[mo]
 			t.Color = int(m[mo+1] & 0x0f)
 			t.Background = int((m[mo+1] & 0xf0) >> 4)
@@ -232,13 +233,13 @@ func (b *Buffer) Image(p color.Palette, f *font.Font) (m image.Image, err error)
 
 			fg := t.Color
 			bg := t.Background
-			if t.Attrib&ATTRIB_BOLD > 0 && fg < 8 {
+			if t.Attributes&attribute.Bold > 0 && fg < 8 {
 				fg += 8
 			}
-			if b.Flags.NonBlink && t.Attrib&ATTRIB_BLINK > 0 && bg < 8 {
+			if b.Flags.NonBlink && t.Attributes&attribute.Blink > 0 && bg < 8 {
 				bg += 8
 			}
-			if t.Attrib&ATTRIB_NEGATIVE == ATTRIB_NEGATIVE {
+			if t.Attributes&attribute.Negative == attribute.Negative {
 				fg, bg = bg, fg
 			}
 
@@ -253,7 +254,7 @@ func (b *Buffer) Image(p color.Palette, f *font.Font) (m image.Image, err error)
 				draw.DrawMask(i, mr.Sub(mr.Min).Add(p), colors[fg], image.ZP, f.Mask, mr.Min, draw.Over)
 			}
 
-			if t.Attrib&ATTRIB_UNDERLINE > 0 {
+			if t.Attributes&attribute.Underline > 0 {
 				for xx := ox; xx < ox+dx; xx++ {
 					i.Set(xx, oy+f.Size.Y, colors[fg])
 				}

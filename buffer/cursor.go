@@ -12,9 +12,9 @@ func NewCursor(x, y int) *Cursor {
 		X: x,
 		Y: y,
 		Tile: Tile{
-			Char:       TILE_DEFAULT_CHAR,
-			Color:      TILE_DEFAULT_COLOR,
-			Background: TILE_DEFAULT_BACKGROUND,
+			Char:       DefaultChar,
+			Color:      DefaultColor,
+			Background: DefaultBackground,
 		},
 	}
 }
