@@ -9,12 +9,14 @@ import (
 	"git.maze.io/maze/go-piece/buffer"
 	"git.maze.io/maze/go-piece/buffer/attribute"
 	"git.maze.io/maze/go-piece/font"
+	"git.maze.io/maze/go-piece/palette"
 	"git.maze.io/maze/go-piece/parser"
 	sauce "git.maze.io/maze/go-sauce"
 )
 
 type IRC struct {
-	buffer *buffer.Buffer
+	buffer  *buffer.Buffer
+	palette palette.Palette
 }
 
 const (
@@ -33,9 +35,29 @@ const (
 	reset      byte = 0x0f
 )
 
+// colorMap is a mapping between mIRC colors and CGA colors
+var colorMap = []int{
+	0x0f, /* white */
+	0x00, /* black */
+	0x01, /* blue */
+	0x03, /* green */
+	0x09, /* red */
+	0x01, /* maroon */
+	0x05, /* purple */
+	0x03, /* orange */
+	0x0b, /* yellow */
+	0x0a, /* light green */
+	0x06, /* teal */
+	0x0e, /* cyan */
+	0x0d, /* fuchsia */
+	0x08, /* dark grey */
+	0x07, /* light grey */
+}
+
 func New() *IRC {
 	return &IRC{
-		buffer: buffer.New(80, 1),
+		buffer:  buffer.New(80, 1),
+		palette: palette.CGA,
 	}
 }
 
@@ -88,15 +110,15 @@ func (p *IRC) Parse(r io.Reader) (err error) {
 			case ch >= '0' && ch <= '9':
 				fg = append(fg, ch)
 				if len(fg) == 2 { // Double digits
-					p.buffer.Cursor.Color, _ = strconv.Atoi(string(fg))
-					p.buffer.Cursor.Color %= 16
+					c, _ := strconv.Atoi(string(fg))
+					p.buffer.Cursor.Color = colorMap[c%16]
 					fg = []byte{}
 				}
 
 			default:
 				if len(fg) > 0 {
-					p.buffer.Cursor.Color, _ = strconv.Atoi(string(fg))
-					p.buffer.Cursor.Color %= 16
+					c, _ := strconv.Atoi(string(fg))
+					p.buffer.Cursor.Color = colorMap[c%16]
 					fg = []byte{}
 				}
 				state = stateText
@@ -106,15 +128,15 @@ func (p *IRC) Parse(r io.Reader) (err error) {
 			if ch >= '0' && ch <= '9' {
 				bg = append(bg, ch)
 				if len(bg) == 2 { // Double digits
-					p.buffer.Cursor.Background, _ = strconv.Atoi(string(bg))
-					p.buffer.Cursor.Background %= 16
+					c, _ := strconv.Atoi(string(fg))
+					p.buffer.Cursor.Background = colorMap[c%16]
 					bg = []byte{}
 					state = stateText
 				}
 			} else {
 				if len(bg) > 0 {
-					p.buffer.Cursor.Background, _ = strconv.Atoi(string(bg))
-					p.buffer.Cursor.Background %= 16
+					c, _ := strconv.Atoi(string(fg))
+					p.buffer.Cursor.Background = colorMap[c%16]
 					bg = []byte{}
 				}
 				state = stateText

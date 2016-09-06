@@ -1,8 +1,12 @@
 package binarytext
 
-import "image/color"
+import (
+	"image/color"
 
-var BINPalette = color.Palette{
+	"git.maze.io/maze/go-piece/palette"
+)
+
+var Palette = palette.Palette{
 	color.RGBA{0x00, 0x00, 0x00, 0xff},
 	color.RGBA{0x00, 0x00, 0xaa, 0xff},
 	color.RGBA{0x00, 0xaa, 0x00, 0xff},

@@ -2,18 +2,18 @@ package binarytext
 
 import (
 	"image"
-	"image/color"
 	"io"
 	"io/ioutil"
 
 	"git.maze.io/maze/go-piece/buffer"
 	"git.maze.io/maze/go-piece/font"
+	"git.maze.io/maze/go-piece/palette"
 	"git.maze.io/maze/go-piece/parser"
 	sauce "git.maze.io/maze/go-sauce"
 )
 
 type BinaryText struct {
-	Palette *color.Palette
+	Palette palette.Palette
 	buffer  *buffer.Buffer
 	font    *font.Font
 	sauce   *sauce.SAUCE
@@ -21,7 +21,7 @@ type BinaryText struct {
 
 func New() *BinaryText {
 	p := &BinaryText{
-		Palette: &BINPalette,
+		Palette: Palette,
 	}
 	return p
 }
@@ -66,7 +66,7 @@ func (p *BinaryText) Height() int {
 }
 
 func (p *BinaryText) Image(f *font.Font) (image.Image, error) {
-	return p.buffer.Image(*p.Palette, f)
+	return p.buffer.Image(p.Palette, f)
 }
 
 func (p *BinaryText) HTML(full bool) (string, error) {

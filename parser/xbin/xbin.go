@@ -13,6 +13,7 @@ import (
 
 	"git.maze.io/maze/go-piece/buffer"
 	"git.maze.io/maze/go-piece/font"
+	"git.maze.io/maze/go-piece/palette"
 	"git.maze.io/maze/go-piece/parser"
 	"git.maze.io/maze/go-piece/parser/binarytext"
 	sauce "git.maze.io/maze/go-sauce"
@@ -62,7 +63,7 @@ var compression = map[uint8]string{
 
 // XBIN implements the eXtended Binary text format
 type XBIN struct {
-	Palette *color.Palette
+	Palette palette.Palette
 	buffer  *buffer.Buffer
 	data    []byte
 	font    *font.Font
@@ -82,7 +83,7 @@ type Header struct {
 // New initializes a new eXtended Binary parser
 func New() *XBIN {
 	p := &XBIN{
-		Palette: &binarytext.BINPalette,
+		Palette: binarytext.Palette,
 		buffer:  buffer.New(80, 1),
 	}
 	return p
@@ -107,7 +108,7 @@ func (p *XBIN) Parse(r io.Reader) (err error) {
 	// Parse palette, if set
 	if p.header.Flags&FlagPalette > 0 {
 		//log.Println("xbin: custom palette")
-		pal := color.Palette{}
+		pal := palette.Palette{}
 
 		for i := 0; i < 16; i++ {
 			var rgb = make([]byte, 3)
@@ -127,7 +128,7 @@ func (p *XBIN) Parse(r io.Reader) (err error) {
 				0xff,
 			})
 		}
-		p.Palette = &pal
+		p.Palette = pal
 	}
 
 	// Parse font, if set
@@ -222,7 +223,7 @@ func (p *XBIN) Height() int {
 
 // Image returns the internal buffer as an image.
 func (p *XBIN) Image(f *font.Font) (m image.Image, err error) {
-	return p.buffer.Image(*p.Palette, f)
+	return p.buffer.Image(p.Palette, f)
 }
 
 // SetFlags imports SAUCE flags

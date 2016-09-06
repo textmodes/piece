@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"image"
-	"image/color"
 	"io"
 	"io/ioutil"
 	"log"
@@ -19,6 +18,7 @@ import (
 	"git.maze.io/maze/go-piece/buffer/attribute"
 	"git.maze.io/maze/go-piece/font"
 	"git.maze.io/maze/go-piece/math"
+	"git.maze.io/maze/go-piece/palette"
 	"git.maze.io/maze/go-piece/parser"
 	sauce "git.maze.io/maze/go-sauce"
 
@@ -99,7 +99,7 @@ type ansiOp func(seq *Sequence) error
 
 // ANSI or ASCII parser
 type ANSI struct {
-	Palette   color.Palette
+	Palette   palette.Palette
 	buffer    *buffer.Buffer
 	opcode    map[byte]ansiOp
 	transform transform.Transformer
@@ -110,7 +110,7 @@ type ANSI struct {
 // New initializes a new ANSi parser with an initial given width and height
 func New(w, h int) *ANSI {
 	p := &ANSI{
-		Palette:   CGAPalette,
+		Palette:   palette.CGA,
 		buffer:    buffer.New(w, h),
 		transform: charmap.CodePage437.NewDecoder(),
 	}

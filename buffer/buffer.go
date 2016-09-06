@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/color"
 	"image/draw"
 
 	"git.maze.io/maze/go-piece/buffer/attribute"
 	"git.maze.io/maze/go-piece/font"
 	"git.maze.io/maze/go-piece/math"
+	"git.maze.io/maze/go-piece/palette"
 	sauce "git.maze.io/maze/go-sauce"
 )
 
@@ -197,7 +197,7 @@ func (b *Buffer) PutChar(c byte) error {
 }
 
 // Image returns the buffer as an image
-func (b *Buffer) Image(p color.Palette, f *font.Font) (m image.Image, err error) {
+func (b *Buffer) Image(p palette.Palette, f *font.Font) (m image.Image, err error) {
 	w, h := b.SizeMax()
 
 	dx := f.Size.X

@@ -9,9 +9,14 @@ import (
 	"git.maze.io/maze/go-piece/buffer"
 	"git.maze.io/maze/go-piece/buffer/attribute"
 	"git.maze.io/maze/go-piece/math"
+	"git.maze.io/maze/go-piece/palette"
 )
 
-func addRGB(p *color.Palette, r, g, b uint8) int {
+func addRGB(p *palette.Palette, r, g, b uint8) int {
+	if palette.IsBuiltin(*p) {
+		*p = p.Copy()
+	}
+
 	var found bool
 	var c int
 	for c = range *p {
@@ -272,8 +277,8 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 				}
 				s.Shift(5)
 			case 5: // VGA color index
-				if len(p.Palette) == 16 {
-					p.Palette = VGAPalette
+				if palette.IsBuiltin(p.Palette) && len(p.Palette) == 16 {
+					p.Palette = palette.VGA
 				}
 				p.buffer.Cursor.Color = s.Int(2)
 				s.Shift(3)
@@ -308,8 +313,8 @@ func (p *ANSI) parseSGR(s *Sequence) (err error) {
 				}
 				s.Shift(5)
 			case 5: // VGA color index
-				if len(p.Palette) == 16 {
-					p.Palette = VGAPalette
+				if palette.IsBuiltin(p.Palette) && len(p.Palette) == 16 {
+					p.Palette = palette.VGA
 				}
 				p.buffer.Cursor.Background = s.Int(2)
 				s.Shift(3)
