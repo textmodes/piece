@@ -16,6 +16,7 @@ import (
 	"git.maze.io/maze/go-piece/font"
 	"git.maze.io/maze/go-piece/parser"
 	"git.maze.io/maze/go-piece/parser/ansi"
+	"git.maze.io/maze/go-piece/parser/binarytext"
 	"git.maze.io/maze/go-piece/parser/xbin"
 	sauce "git.maze.io/maze/go-sauce"
 )
@@ -47,8 +48,10 @@ func main() {
 	switch *outputFlag {
 	case "", "-", "stdout", "/dev/stdout":
 		o = os.Stdout
+
 	case "stderr", "/dev/stderr":
 		o = os.Stderr
+
 	default:
 		var of *os.File
 		if of, err = os.Create(*outputFlag); err != nil {
@@ -74,6 +77,10 @@ func main() {
 		switch strings.ToLower(filepath.Ext(filename)) {
 		case ".asc", ".ans", ".txt", ".diz", ".lit":
 			p = ansi.New(w, h)
+
+		case ".bin":
+			p = binarytext.New()
+
 		case ".xb":
 			p = xbin.New()
 		}
@@ -85,6 +92,9 @@ func main() {
 				w = int(s.TInfo[0])
 				p = ansi.New(w, h)
 			}
+
+		case sauce.DataTypeBinaryText:
+			p = binarytext.New()
 
 		case sauce.DataTypeXBIN:
 			p = xbin.New()
@@ -107,7 +117,11 @@ func main() {
 
 	switch *formatFlag {
 	case "html":
-		fmt.Fprint(o, p.HTML(true))
+		var html string
+		if html, err = p.HTML(true); err != nil {
+			log.Fatalf("%s: render failed: %v\n", filename, err)
+		}
+		fmt.Fprint(o, html)
 
 	case "image", "gif", "jpg", "jpeg", "png":
 		var pieceFont = p.Font()
@@ -144,6 +158,7 @@ func main() {
 		if err != nil {
 			log.Fatalln("%s: encode failed: %v\n", filename, err)
 		}
+
 	case "text":
 		fmt.Fprint(o, p.String())
 

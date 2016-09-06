@@ -184,8 +184,8 @@ func (p *XBIN) Parse(r io.Reader) (err error) {
 }
 
 // HTML returns the internal buffer as HTML.
-func (p *XBIN) HTML(full bool) (h string) {
-	return
+func (p *XBIN) HTML(full bool) (string, error) {
+	return "", parser.ErrNotSupported
 }
 
 // String returns the internal buffer as string.

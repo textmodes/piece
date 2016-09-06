@@ -264,7 +264,7 @@ func (p *ANSI) SetFlags(f sauce.TFlags) {
 }
 
 // HTML returns the internal buffer as HTML.
-func (p *ANSI) HTML(full bool) (s string) {
+func (p *ANSI) HTML(full bool) (s string, err error) {
 	if full {
 		s += "<!doctype html>\n"
 		s += "<link rel=\"stylesheet\" href=\"cp437.css\">\n"
@@ -353,6 +353,7 @@ func (p *ANSI) HTML(full bool) (s string) {
 	if full {
 		s += `</pre>`
 	}
+
 	return
 }
 
